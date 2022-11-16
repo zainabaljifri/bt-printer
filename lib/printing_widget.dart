@@ -1,7 +1,10 @@
+import 'dart:convert';
 import 'package:blue_thermal_printing/blue_print.dart';
 import 'package:esc_pos_utils/esc_pos_utils.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_blue/flutter_blue.dart';
+import 'package:charset_converter/charset_converter.dart';
 
 FlutterBlue flutterBlue = FlutterBlue.instance;
 
@@ -22,7 +25,7 @@ class _PrintingWidgetState extends State<PrintingWidget> {
   }
 
   void findDevices() {
-    flutterBlue.startScan(timeout: const Duration(seconds: 4));
+    flutterBlue.startScan(timeout: const Duration(seconds: 2));
     flutterBlue.scanResults.listen((results) {
       setState(() {
         scanResult = results;
@@ -35,10 +38,32 @@ class _PrintingWidgetState extends State<PrintingWidget> {
     await device.connect();
     final gen = Generator(PaperSize.mm58, await CapabilityProfile.load());
     final printer = BluePrint();
-    printer.add(gen.qrcode('https://altospos.com'));
-    printer.add(gen.text('Hello'));
-    printer.add(gen.text('World', styles: const PosStyles(bold: true)));
-    printer.add(gen.feed(1));
+    // printer.add(gen.qrcode('https://google.com'));
+    // printer.add(gen.text('Hello'));
+    // printer.add(gen.text('World', styles: const PosStyles(bold: true)));
+    // printer.add(gen.feed(1)); // for line spacing
+    // Uint8List encoded = await CharsetConverter.encode(
+    //     'windows-1256', "فاتورة ضريبة فاتورة ضريبة فاتورة ضريبة");
+    // printer.add(gen.textEncoded(encoded));
+    // String source = 'تجربة';
+    // List<int> list = utf8.encode(source);
+    // Uint8List bytess = Uint8List.fromList(list);
+    // String outcome = utf8.decode(bytess);
+    // printer.add(gen.textEncoded(
+    //   Uint8List.fromList([
+    //     ...[
+    //       0x1C,
+    //       0x26,
+    //     ],
+    //     ...utf8.encode('تجربى')
+    //   ]),
+    // styles: PosStyles(codeTable: 'CP1252')
+    // ));
+    // printer.add(gen.text(
+    //   'Special 1: Iñtërnâtiônàlizætiøn',
+    // styles: PosStyles(codeTable: 'CP936')
+    // ));
+
     await printer.printData(device);
     device.disconnect();
   }

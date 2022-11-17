@@ -1,10 +1,21 @@
 import 'dart:convert';
+import 'dart:io';
+import 'dart:ui' as Image;
 import 'package:blue_thermal_printing/blue_print.dart';
 import 'package:esc_pos_utils/esc_pos_utils.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'package:charset_converter/charset_converter.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:screenshot/screenshot.dart';
+import 'dart:typed_data';
+import 'package:image/image.dart' as CustomImage;
+
+GlobalKey _screenShotKey = GlobalKey();
+
+late Uint8List theimageThatComesfromThePrinter;
 
 FlutterBlue flutterBlue = FlutterBlue.instance;
 
@@ -16,6 +27,7 @@ class PrintingWidget extends StatefulWidget {
 }
 
 class _PrintingWidgetState extends State<PrintingWidget> {
+  ScreenshotController screenshotController = ScreenshotController();
   List<ScanResult>? scanResult;
 
   @override
@@ -38,6 +50,16 @@ class _PrintingWidgetState extends State<PrintingWidget> {
     await device.connect();
     final gen = Generator(PaperSize.mm58, await CapabilityProfile.load());
     final printer = BluePrint();
+    RenderRepaintBoundary boundary = _screenShotKey.currentContext!
+        .findRenderObject() as RenderRepaintBoundary;
+    Image.Image image = await boundary.toImage();
+    ByteData? byteData =
+        await image.toByteData(format: Image.ImageByteFormat.png);
+    Uint8List pngBytes = byteData!.buffer.asUint8List();
+    CustomImage.Image imagePNG = CustomImage.decodePng(pngBytes)!;
+    printer.add(gen.image(imagePNG));
+
+    // printer.add(gen.image(image));
     // printer.add(gen.qrcode('https://google.com'));
     // printer.add(gen.text('Hello'));
     // printer.add(gen.text('World', styles: const PosStyles(bold: true)));
@@ -68,20 +90,59 @@ class _PrintingWidgetState extends State<PrintingWidget> {
     device.disconnect();
   }
 
+  Future<void> takeScreenshot() async {
+    RenderRepaintBoundary boundary = _screenShotKey.currentContext!
+        .findRenderObject() as RenderRepaintBoundary;
+    Image.Image image = await boundary.toImage();
+    ByteData? byteData =
+        await image.toByteData(format: Image.ImageByteFormat.png);
+    Uint8List pngBytes = byteData!.buffer.asUint8List();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Bluetooth devices')),
-      body: ListView.separated(
-        itemBuilder: (context, index) {
-          return ListTile(
-            title: Text(scanResult![index].device.name),
-            subtitle: Text(scanResult![index].device.id.id),
-            onTap: () => printWithDevice(scanResult![index].device),
-          );
-        },
-        separatorBuilder: (context, index) => const Divider(),
-        itemCount: scanResult?.length ?? 0,
+      body: ListView(
+        children: [
+          RepaintBoundary(
+            key: _screenShotKey,
+            child: ListView(
+              shrinkWrap: true,
+              children: [
+                Text(
+                  'شادي أيمن',
+                  style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  'شادي أيمن',
+                  style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  'شادي أيمن',
+                  style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  'شادي أيمن',
+                  style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          ),
+          ListView.separated(
+            shrinkWrap: true,
+            physics: ClampingScrollPhysics(),
+            itemBuilder: (context, index) {
+              return ListTile(
+                title: Text(scanResult![index].device.name),
+                subtitle: Text(scanResult![index].device.id.id),
+                onTap: () => printWithDevice(scanResult![index].device),
+              );
+            },
+            separatorBuilder: (context, index) => const Divider(),
+            itemCount: scanResult?.length ?? 0,
+          ),
+        ],
       ),
     );
   }

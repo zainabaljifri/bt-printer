@@ -47,7 +47,7 @@ class _PrintingWidgetState extends State<PrintingWidget> {
   }
 
   void printWithDevice(BluetoothDevice device) async {
-    await device.connect();
+    // await device.connect();
     final gen = Generator(PaperSize.mm58, await CapabilityProfile.load());
     final printer = BluePrint();
     RenderRepaintBoundary boundary = _screenShotKey.currentContext!
